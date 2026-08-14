@@ -1,45 +1,38 @@
 from dotenv import load_dotenv
 from openai import OpenAI
-from validation_helper import ClassificationResult
+from validation_helper import QueryIntent
 
 load_dotenv()
 
 client = OpenAI()
 
 messages = [
-    'Which product generated the most revenue?',
-    'How much revenue did we generate last month?',
-    'Which customer placed the most orders?',
-    "Which product category contributed most to last month's growth?",
-    "Show me our best performers."
+    "Show me the top 3 products by revenue.",
+    "Which customer generated the most revenue?",
+    "Show me customers by number of orders.",
+    "What is the average revenue per product?",
+    "Which supplier has the highest profit margin?"
 ]
 
-response = client.chat.completions.parse(
-    model="gpt-4o-mini",
-    messages=[
-        {
-            "role": "system", 
-            "content": "Categorize this analytics question into \
-                SALES: \
-                overall revenue/sales questions where product or customer \
-                is not the primary entity \
-                PRODUCT: \
-                questions where product, SKU, or product category is the \
-                primary entity \
-                CUSTOMER: \
-                questions where customer or customer segment is the \
-                primary entity"
-            },
-        {"role": "user", "content": "Which product generated the most revenue?"}
-    ],
-    response_format=ClassificationResult
-)
+for message in messages:
+    response = client.chat.completions.parse(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "system", 
+                "content": "You are the data analyst and your task is to \
+                    understand the user query and convert it into the schema \
+                    specified."
+                },
+            {"role": "user", "content": message}
+        ],
+        response_format=QueryIntent
+    )
 
-# print(response)
-# print(f'response:{response.choices[0].message.content}')
-
-result = response.choices[0].message.parsed
-print(result)
-print(result.category)
-print(type(result))
-print(type(result.category))
+    result = response.choices[0].message.parsed
+    print(f'Message: {message}')
+    print(f'Entity: {result.entity}')
+    print(f'Metric: {result.metric}')
+    print(f'Aggregation: {result.aggregation}')
+    print(f'Sort Direction: {result.sort_direction}')
+    print(f'Limit: {result.limit}')
