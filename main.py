@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 from openai import OpenAI
+from validation_helper import ClassificationResult
 
 load_dotenv()
 
@@ -13,56 +14,32 @@ messages = [
     "Show me our best performers."
 ]
 
-exp_a, exp_b, exp_c = 0, 0, 0
+response = client.chat.completions.parse(
+    model="gpt-4o-mini",
+    messages=[
+        {
+            "role": "system", 
+            "content": "Categorize this analytics question into \
+                SALES: \
+                overall revenue/sales questions where product or customer \
+                is not the primary entity \
+                PRODUCT: \
+                questions where product, SKU, or product category is the \
+                primary entity \
+                CUSTOMER: \
+                questions where customer or customer segment is the \
+                primary entity"
+            },
+        {"role": "user", "content": "Which product generated the most revenue?"}
+    ],
+    response_format=ClassificationResult
+)
 
-for message in messages:
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "Categorize this analytics question:"},
-            {"role": "user", "content": message}
-        ]
-    )
+# print(response)
+# print(f'response:{response.choices[0].message.content}')
 
-    print(f'EXP A message: {message}')
-    print(f'EXP A response:{response.choices[0].message.content}')
-    exp_a += response.usage.total_tokens
-
-    response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "Categorize this analytics question. Return exactly one of SALES, PRODUCT, CUSTOMER"},
-                {"role": "user", "content": message}
-            ]
-        )
-
-    print(f'EXP B message: {message}')
-    print(f'EXP B response:{response.choices[0].message.content}')
-    exp_b += response.usage.total_tokens
-
-    response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "system", 
-                    "content": "Categorize this analytics question. \
-                        Return exactly one of SALES, PRODUCT, CUSTOMER \
-                        for example \
-                        How much revenue did we generate? \
-                        → SALES \
-                        Which SKU sold the most units? \
-                        → PRODUCT \
-                        Which customer spent the most? \
-                        → CUSTOMER"
-                },
-                {"role": "user", "content": message}
-            ]
-        )
-
-    print(f'EXP C message: {message}')
-    print(f'EXP C response:{response.choices[0].message.content}')
-    exp_c += response.usage.total_tokens
-
-print(f'EXP A total tokens: {exp_a}')
-print(f'EXP B total tokens: {exp_b}')
-print(f'EXP C total tokens: {exp_c}')
+result = response.choices[0].message.parsed
+print(result)
+print(result.category)
+print(type(result))
+print(type(result.category))
