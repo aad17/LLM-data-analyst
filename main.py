@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 from openai import OpenAI
 from validation_helper import QueryIntent, RequestStatus
+from response_helper import user_response
 from data_helper import execute_query
 import pandas as pd
 
@@ -34,9 +35,9 @@ Our application strictly and exclusively supports the following data points:
 """
 
 queries = [
-    # "Show me the top 3 products by revenue.",
+    "Show me the top 3 products by revenue.",
     # "Which customer generated the most revenue?",
-    "Show me customers by number of orders.",
+    # "Show me customers by number of orders.",
     "What is the average revenue per product?",
     # "Which supplier has the highest profit margin?",
 ]
@@ -55,20 +56,15 @@ for message in queries:
     )
 
     result = response.choices[0].message.parsed
-    print(f'Message: {message}')
-    print(f'Status: {result.status}')
-    print(f'Entity: {result.entity}')
-    print(f'Metric: {result.metric}')
-    print(f'Aggregation: {result.aggregation}')
-    print(f'Sort Direction: {result.sort_direction}')
-    print(f'Limit: {result.limit}')
-    print(f'Reason: {result.reason}')
+    print(message)
 
     if result.status == RequestStatus.SUPPORTED:
         try:
             print("Route: EXECUTE")
             data = execute_query(DATA, result)
-            print(data)
+            print(f"Data Result: {data}")
+            response = user_response(data, message)
+            print(f"Final Answer: {response}")
         except ValueError as e:
             print(f"Caught expected failure {e}")
     elif result.status == RequestStatus.UNSUPPORTED:
