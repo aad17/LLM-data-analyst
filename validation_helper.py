@@ -19,8 +19,21 @@ class SortDirection(str, Enum):
     ASC = "ASC"
     DESC = "DESC"
 
+class RequestStatus(str, Enum):
+    SUPPORTED = "SUPPORTED"
+    UNSUPPORTED = "UNSUPPORTED"
+    AMBIGUOUS = "AMBIGUOUS"
+
 class QueryIntent(BaseModel):
-    entity: Entity = Field(
+    status: RequestStatus = Field(
+        description=("SUPPORTED, UNSUPPORTED, or AMBIGUOUS classification.")
+    )
+    reason: Optional[str] = Field(
+        default=None,
+        description=("Human explanation of classification or logic.")
+    )
+    entity: Optional[Entity] = Field(
+        default=None,
         description="The core business entity being queried. Always required."
     )
     metric: Optional[Metric] = Field(
