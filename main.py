@@ -1,10 +1,14 @@
 from dotenv import load_dotenv
 from openai import OpenAI
 from validation_helper import QueryIntent, RequestStatus
+from data_helper import execute_query
+import pandas as pd
 
 load_dotenv()
 
 client = OpenAI()
+
+DATA = pd.read_csv("data/sales.csv")
 
 SYSTEM_PROMPT = """
 You are an advanced Natural Language to SQL/API router. Your sole job is to analyze user requests and translate them into a structured query intent configuration.
@@ -29,15 +33,15 @@ Our application strictly and exclusively supports the following data points:
 - For UNSUPPORTED or AMBIGUOUS requests: Provide a concise, helpful, and polite human-readable explanation explaining exactly why the request cannot be processed or what data is natively supported.
 """
 
-messages = [
-    "Show me the top 3 products by revenue.",
-    "Which customer generated the most revenue?",
+queries = [
+    # "Show me the top 3 products by revenue.",
+    # "Which customer generated the most revenue?",
     "Show me customers by number of orders.",
-    "Which supplier has the highest profit margin?",
-    "Show me our best performers."
+    "What is the average revenue per product?",
+    # "Which supplier has the highest profit margin?",
 ]
 
-for message in messages:
+for message in queries:
     response = client.chat.completions.parse(
         model="gpt-4o-mini",
         messages=[
@@ -61,7 +65,12 @@ for message in messages:
     print(f'Reason: {result.reason}')
 
     if result.status == RequestStatus.SUPPORTED:
-        print("Route: EXECUTE")
+        try:
+            print("Route: EXECUTE")
+            data = execute_query(DATA, result)
+            print(data)
+        except ValueError as e:
+            print(f"Caught expected failure {e}")
     elif result.status == RequestStatus.UNSUPPORTED:
         print("Route: REJECT")
         print(f"Reason: {result.reason}")
